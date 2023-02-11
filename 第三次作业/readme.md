@@ -9,7 +9,8 @@
 
 |                |  IoU (%) |Acc(%)|
 | :-----------------: |  :-------: | :-------: |
-| background |   99.23   |99.76|
-| glomeruili |   64.17   |71.98|
+| background |   99.35   |99.6|
+| glomeruili |   68.19   |84.7|
+
 
 ### 混淆矩阵![WhatsApp 图像 2023-02-11 于 15 48 33](https://user-images.githubusercontent.com/65354319/218248550-f09f0d52-c070-4055-916d-421729b253bd.jpg)
