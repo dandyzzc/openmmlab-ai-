@@ -1,0 +1,909 @@
+2023-02-13 22:37:52,529 - mmseg - INFO - Multi-processing start method is `None`
+2023-02-13 22:37:52,530 - mmseg - INFO - OpenCV num_threads is `6
+2023-02-13 22:37:52,571 - mmseg - INFO - Environment info:
+------------------------------------------------------------
+sys.platform: linux
+Python: 3.7.10 (default, Jun  4 2021, 14:48:32) [GCC 7.5.0]
+CUDA available: True
+GPU 0: NVIDIA GeForce RTX 3060
+CUDA_HOME: /usr/local/cuda
+NVCC: Cuda compilation tools, release 11.2, V11.2.152
+GCC: gcc (Ubuntu 9.3.0-17ubuntu1~20.04) 9.3.0
+PyTorch: 1.10.0+cu113
+PyTorch compiling details: PyTorch built with:
+  - GCC 7.3
+  - C++ Version: 201402
+  - Intel(R) Math Kernel Library Version 2020.0.0 Product Build 20191122 for Intel(R) 64 architecture applications
+  - Intel(R) MKL-DNN v2.2.3 (Git Hash 7336ca9f055cf1bfa13efb658fe15dc9b41f0740)
+  - OpenMP 201511 (a.k.a. OpenMP 4.5)
+  - LAPACK is enabled (usually provided by MKL)
+  - NNPACK is enabled
+  - CPU capability usage: AVX2
+  - CUDA Runtime 11.3
+  - NVCC architecture flags: -gencode;arch=compute_37,code=sm_37;-gencode;arch=compute_50,code=sm_50;-gencode;arch=compute_60,code=sm_60;-gencode;arch=compute_70,code=sm_70;-gencode;arch=compute_75,code=sm_75;-gencode;arch=compute_80,code=sm_80;-gencode;arch=compute_86,code=sm_86
+  - CuDNN 8.2
+  - Magma 2.5.2
+  - Build settings: BLAS_INFO=mkl, BUILD_TYPE=Release, CUDA_VERSION=11.3, CUDNN_VERSION=8.2.0, CXX_COMPILER=/opt/rh/devtoolset-7/root/usr/bin/c++, CXX_FLAGS= -Wno-deprecated -fvisibility-inlines-hidden -DUSE_PTHREADPOOL -fopenmp -DNDEBUG -DUSE_KINETO -DUSE_FBGEMM -DUSE_QNNPACK -DUSE_PYTORCH_QNNPACK -DUSE_XNNPACK -DSYMBOLICATE_MOBILE_DEBUG_HANDLE -DEDGE_PROFILER_USE_KINETO -O2 -fPIC -Wno-narrowing -Wall -Wextra -Werror=return-type -Wno-missing-field-initializers -Wno-type-limits -Wno-array-bounds -Wno-unknown-pragmas -Wno-sign-compare -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wno-unused-result -Wno-unused-local-typedefs -Wno-strict-overflow -Wno-strict-aliasing -Wno-error=deprecated-declarations -Wno-stringop-overflow -Wno-psabi -Wno-error=pedantic -Wno-error=redundant-decls -Wno-error=old-style-cast -fdiagnostics-color=always -faligned-new -Wno-unused-but-set-variable -Wno-maybe-uninitialized -fno-math-errno -fno-trapping-math -Werror=format -Wno-stringop-overflow, LAPACK_INFO=mkl, PERF_WITH_AVX=1, PERF_WITH_AVX2=1, PERF_WITH_AVX512=1, TORCH_VERSION=1.10.0, USE_CUDA=ON, USE_CUDNN=ON, USE_EXCEPTION_PTR=1, USE_GFLAGS=OFF, USE_GLOG=OFF, USE_MKL=ON, USE_MKLDNN=ON, USE_MPI=OFF, USE_NCCL=ON, USE_NNPACK=ON, USE_OPENMP=ON, 
+
+TorchVision: 0.11.1+cu113
+OpenCV: 4.5.4
+MMCV: 1.7.1
+MMCV Compiler: GCC 9.3
+MMCV CUDA Compiler: 11.3
+MMSegmentation: 0.30.0+8ea3ea3
+------------------------------------------------------------
+
+2023-02-13 22:37:52,571 - mmseg - INFO - Distributed training: False
+2023-02-13 22:37:53,745 - mmseg - INFO - Config:
+norm_cfg = dict(type='SyncBN', requires_grad=True)
+model = dict(
+    type='EncoderDecoder',
+    pretrained='open-mmlab://resnet50_v1c',
+    backbone=dict(
+        type='ResNetV1c',
+        depth=50,
+        num_stages=4,
+        out_indices=(0, 1, 2, 3),
+        dilations=(1, 1, 2, 4),
+        strides=(1, 2, 1, 1),
+        norm_cfg=dict(type='SyncBN', requires_grad=True),
+        norm_eval=False,
+        style='pytorch',
+        contract_dilation=True),
+    decode_head=dict(
+        type='PSPHead',
+        in_channels=2048,
+        in_index=3,
+        channels=512,
+        pool_scales=(1, 2, 3, 6),
+        dropout_ratio=0.1,
+        num_classes=21,
+        norm_cfg=dict(type='SyncBN', requires_grad=True),
+        align_corners=False,
+        loss_decode=dict(
+            type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0)),
+    auxiliary_head=dict(
+        type='FCNHead',
+        in_channels=1024,
+        in_index=2,
+        channels=256,
+        num_convs=1,
+        concat_input=False,
+        dropout_ratio=0.1,
+        num_classes=21,
+        norm_cfg=dict(type='SyncBN', requires_grad=True),
+        align_corners=False,
+        loss_decode=dict(
+            type='CrossEntropyLoss', use_sigmoid=False, loss_weight=0.4)),
+    train_cfg=dict(),
+    test_cfg=dict(mode='whole'))
+dataset_type = 'PascalVOCDataset'
+data_root = '/home/featurize/mmsegmentation/data/VOCdevkit2012/VOC2012'
+img_norm_cfg = dict(
+    mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
+crop_size = (512, 512)
+train_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(type='LoadAnnotations'),
+    dict(type='Resize', img_scale=(2048, 512), ratio_range=(0.5, 2.0)),
+    dict(type='RandomCrop', crop_size=(512, 512), cat_max_ratio=0.75),
+    dict(type='RandomFlip', prob=0.5),
+    dict(type='PhotoMetricDistortion'),
+    dict(
+        type='Normalize',
+        mean=[123.675, 116.28, 103.53],
+        std=[58.395, 57.12, 57.375],
+        to_rgb=True),
+    dict(type='Pad', size=(512, 512), pad_val=0, seg_pad_val=255),
+    dict(type='DefaultFormatBundle'),
+    dict(type='Collect', keys=['img', 'gt_semantic_seg'])
+]
+test_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(
+        type='MultiScaleFlipAug',
+        img_scale=(2048, 512),
+        flip=False,
+        transforms=[
+            dict(type='Resize', keep_ratio=True),
+            dict(type='RandomFlip'),
+            dict(
+                type='Normalize',
+                mean=[123.675, 116.28, 103.53],
+                std=[58.395, 57.12, 57.375],
+                to_rgb=True),
+            dict(type='ImageToTensor', keys=['img']),
+            dict(type='Collect', keys=['img'])
+        ])
+]
+data = dict(
+    samples_per_gpu=4,
+    workers_per_gpu=4,
+    train=dict(
+        type='PascalVOCDataset',
+        data_root='/home/featurize/mmsegmentation/data/VOCdevkit2012/VOC2012',
+        img_dir='JPEGImages',
+        ann_dir=['SegmentationClass'],
+        split=[
+            '/home/featurize/mmsegmentation/data/VOCdevkit2012/VOC2012/ImageSets/Segmentation/train.txt'
+        ],
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(type='LoadAnnotations'),
+            dict(type='Resize', img_scale=(2048, 512), ratio_range=(0.5, 2.0)),
+            dict(type='RandomCrop', crop_size=(512, 512), cat_max_ratio=0.75),
+            dict(type='RandomFlip', prob=0.5),
+            dict(type='PhotoMetricDistortion'),
+            dict(
+                type='Normalize',
+                mean=[123.675, 116.28, 103.53],
+                std=[58.395, 57.12, 57.375],
+                to_rgb=True),
+            dict(type='Pad', size=(512, 512), pad_val=0, seg_pad_val=255),
+            dict(type='DefaultFormatBundle'),
+            dict(type='Collect', keys=['img', 'gt_semantic_seg'])
+        ]),
+    val=dict(
+        type='PascalVOCDataset',
+        data_root='/home/featurize/mmsegmentation/data/VOCdevkit2012/VOC2012',
+        img_dir='JPEGImages',
+        ann_dir='SegmentationClass',
+        split=
+        '/home/featurize/mmsegmentation/data/VOCdevkit2012/VOC2012/ImageSets/Segmentation/val.txt',
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(
+                type='MultiScaleFlipAug',
+                img_scale=(2048, 512),
+                flip=False,
+                transforms=[
+                    dict(type='Resize', keep_ratio=True),
+                    dict(type='RandomFlip'),
+                    dict(
+                        type='Normalize',
+                        mean=[123.675, 116.28, 103.53],
+                        std=[58.395, 57.12, 57.375],
+                        to_rgb=True),
+                    dict(type='ImageToTensor', keys=['img']),
+                    dict(type='Collect', keys=['img'])
+                ])
+        ]),
+    test=dict(
+        type='PascalVOCDataset',
+        data_root='/home/featurize/mmsegmentation/data/VOCdevkit2012/VOC2012',
+        img_dir='JPEGImages',
+        ann_dir='SegmentationClass',
+        split=
+        '/home/featurize/mmsegmentation/data/VOCdevkit2012/VOC2012/ImageSets/Segmentation/val.txt',
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(
+                type='MultiScaleFlipAug',
+                img_scale=(2048, 512),
+                flip=False,
+                transforms=[
+                    dict(type='Resize', keep_ratio=True),
+                    dict(type='RandomFlip'),
+                    dict(
+                        type='Normalize',
+                        mean=[123.675, 116.28, 103.53],
+                        std=[58.395, 57.12, 57.375],
+                        to_rgb=True),
+                    dict(type='ImageToTensor', keys=['img']),
+                    dict(type='Collect', keys=['img'])
+                ])
+        ]))
+optimizer = dict(type='SGD', lr=0.004, momentum=0.9, weight_decay=0.0006)
+optimizer_config = dict()
+lr_config = dict(policy='poly', power=0.9, min_lr=0.0001, by_epoch=False)
+runner = dict(type='IterBasedRunner', max_iters=2000)
+checkpoint_config = dict(by_epoch=False, interval=500)
+evaluation = dict(interval=200, metric='mIoU', pre_eval=True)
+log_config = dict(
+    interval=50, hooks=[dict(type='TextLoggerHook', by_epoch=False)])
+dist_params = dict(backend='nccl')
+log_level = 'INFO'
+load_from = 'https://download.openmmlab.com/mmsegmentation/v0.5/pspnet/pspnet_r50-d8_512x512_20k_voc12aug/pspnet_r50-d8_512x512_20k_voc12aug_20200617_101958-ed5dfbd9.pth'
+resume_from = None
+workflow = [('train', 1)]
+cudnn_benchmark = True
+work_dir = './work_dirs/pspnet1'
+gpu_ids = [0]
+auto_resume = False
+
+2023-02-13 22:37:53,746 - mmseg - INFO - Set random seed to 837607256, deterministic: False
+2023-02-13 22:37:54,677 - mmseg - INFO - EncoderDecoder(
+  (backbone): ResNetV1c(
+    (stem): Sequential(
+      (0): Conv2d(3, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+      (1): _BatchNormXd(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (2): ReLU(inplace=True)
+      (3): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (4): _BatchNormXd(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (5): ReLU(inplace=True)
+      (6): Conv2d(32, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (7): _BatchNormXd(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (8): ReLU(inplace=True)
+    )
+    (maxpool): MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
+    (layer1): ResLayer(
+      (0): Bottleneck(
+        (conv1): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): _BatchNormXd(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn2): _BatchNormXd(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): _BatchNormXd(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+        (downsample): Sequential(
+          (0): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (1): _BatchNormXd(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+      )
+      (1): Bottleneck(
+        (conv1): Conv2d(256, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): _BatchNormXd(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn2): _BatchNormXd(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): _BatchNormXd(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      (2): Bottleneck(
+        (conv1): Conv2d(256, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): _BatchNormXd(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn2): _BatchNormXd(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): _BatchNormXd(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+    )
+    (layer2): ResLayer(
+      (0): Bottleneck(
+        (conv1): Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): _BatchNormXd(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+        (bn2): _BatchNormXd(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): _BatchNormXd(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+        (downsample): Sequential(
+          (0): Conv2d(256, 512, kernel_size=(1, 1), stride=(2, 2), bias=False)
+          (1): _BatchNormXd(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+      )
+      (1): Bottleneck(
+        (conv1): Conv2d(512, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): _BatchNormXd(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn2): _BatchNormXd(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): _BatchNormXd(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      (2): Bottleneck(
+        (conv1): Conv2d(512, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): _BatchNormXd(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn2): _BatchNormXd(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): _BatchNormXd(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      (3): Bottleneck(
+        (conv1): Conv2d(512, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): _BatchNormXd(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn2): _BatchNormXd(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): _BatchNormXd(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+    )
+    (layer3): ResLayer(
+      (0): Bottleneck(
+        (conv1): Conv2d(512, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): _BatchNormXd(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn2): _BatchNormXd(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): _BatchNormXd(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+        (downsample): Sequential(
+          (0): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (1): _BatchNormXd(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+      )
+      (1): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): _BatchNormXd(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+        (bn2): _BatchNormXd(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): _BatchNormXd(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      (2): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): _BatchNormXd(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+        (bn2): _BatchNormXd(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): _BatchNormXd(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      (3): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): _BatchNormXd(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+        (bn2): _BatchNormXd(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): _BatchNormXd(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      (4): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): _BatchNormXd(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+        (bn2): _BatchNormXd(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): _BatchNormXd(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      (5): Bottleneck(
+        (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): _BatchNormXd(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+        (bn2): _BatchNormXd(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): _BatchNormXd(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+    )
+    (layer4): ResLayer(
+      (0): Bottleneck(
+        (conv1): Conv2d(1024, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): _BatchNormXd(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+        (bn2): _BatchNormXd(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): _BatchNormXd(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+        (downsample): Sequential(
+          (0): Conv2d(1024, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (1): _BatchNormXd(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+      )
+      (1): Bottleneck(
+        (conv1): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): _BatchNormXd(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), bias=False)
+        (bn2): _BatchNormXd(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): _BatchNormXd(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+      (2): Bottleneck(
+        (conv1): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn1): _BatchNormXd(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), bias=False)
+        (bn2): _BatchNormXd(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn3): _BatchNormXd(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+      )
+    )
+  )
+  init_cfg={'type': 'Pretrained', 'checkpoint': 'open-mmlab://resnet50_v1c'}
+  (decode_head): PSPHead(
+    input_transform=None, ignore_index=255, align_corners=False
+    (loss_decode): CrossEntropyLoss(avg_non_ignore=False)
+    (conv_seg): Conv2d(512, 21, kernel_size=(1, 1), stride=(1, 1))
+    (dropout): Dropout2d(p=0.1, inplace=False)
+    (psp_modules): PPM(
+      (0): Sequential(
+        (0): AdaptiveAvgPool2d(output_size=1)
+        (1): ConvModule(
+          (conv): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): _BatchNormXd(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (activate): ReLU(inplace=True)
+        )
+      )
+      (1): Sequential(
+        (0): AdaptiveAvgPool2d(output_size=2)
+        (1): ConvModule(
+          (conv): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): _BatchNormXd(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (activate): ReLU(inplace=True)
+        )
+      )
+      (2): Sequential(
+        (0): AdaptiveAvgPool2d(output_size=3)
+        (1): ConvModule(
+          (conv): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): _BatchNormXd(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (activate): ReLU(inplace=True)
+        )
+      )
+      (3): Sequential(
+        (0): AdaptiveAvgPool2d(output_size=6)
+        (1): ConvModule(
+          (conv): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): _BatchNormXd(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (activate): ReLU(inplace=True)
+        )
+      )
+    )
+    (bottleneck): ConvModule(
+      (conv): Conv2d(4096, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (bn): _BatchNormXd(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (activate): ReLU(inplace=True)
+    )
+  )
+  init_cfg={'type': 'Normal', 'std': 0.01, 'override': {'name': 'conv_seg'}}
+  (auxiliary_head): FCNHead(
+    input_transform=None, ignore_index=255, align_corners=False
+    (loss_decode): CrossEntropyLoss(avg_non_ignore=False)
+    (conv_seg): Conv2d(256, 21, kernel_size=(1, 1), stride=(1, 1))
+    (dropout): Dropout2d(p=0.1, inplace=False)
+    (convs): Sequential(
+      (0): ConvModule(
+        (conv): Conv2d(1024, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn): _BatchNormXd(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (activate): ReLU(inplace=True)
+      )
+    )
+  )
+  init_cfg={'type': 'Normal', 'std': 0.01, 'override': {'name': 'conv_seg'}}
+)
+2023-02-13 22:37:54,684 - mmseg - INFO - Loaded 1464 images
+2023-02-13 22:38:02,730 - mmseg - INFO - Loaded 1449 images
+2023-02-13 22:38:02,731 - mmseg - INFO - load checkpoint from http path: https://download.openmmlab.com/mmsegmentation/v0.5/pspnet/pspnet_r50-d8_512x512_20k_voc12aug/pspnet_r50-d8_512x512_20k_voc12aug_20200617_101958-ed5dfbd9.pth
+2023-02-13 22:38:02,928 - mmseg - INFO - Start running, host: featurize@featurize, work_dir: /home/featurize/mmsegmentation/work_dirs/pspnet1
+2023-02-13 22:38:02,929 - mmseg - INFO - Hooks will be executed in the following order:
+before_run:
+(VERY_HIGH   ) PolyLrUpdaterHook                  
+(NORMAL      ) CheckpointHook                     
+(LOW         ) EvalHook                           
+(VERY_LOW    ) TextLoggerHook                     
+ -------------------- 
+before_train_epoch:
+(VERY_HIGH   ) PolyLrUpdaterHook                  
+(LOW         ) IterTimerHook                      
+(LOW         ) EvalHook                           
+(VERY_LOW    ) TextLoggerHook                     
+ -------------------- 
+before_train_iter:
+(VERY_HIGH   ) PolyLrUpdaterHook                  
+(LOW         ) IterTimerHook                      
+(LOW         ) EvalHook                           
+ -------------------- 
+after_train_iter:
+(ABOVE_NORMAL) OptimizerHook                      
+(NORMAL      ) CheckpointHook                     
+(LOW         ) IterTimerHook                      
+(LOW         ) EvalHook                           
+(VERY_LOW    ) TextLoggerHook                     
+ -------------------- 
+after_train_epoch:
+(NORMAL      ) CheckpointHook                     
+(LOW         ) EvalHook                           
+(VERY_LOW    ) TextLoggerHook                     
+ -------------------- 
+before_val_epoch:
+(LOW         ) IterTimerHook                      
+(VERY_LOW    ) TextLoggerHook                     
+ -------------------- 
+before_val_iter:
+(LOW         ) IterTimerHook                      
+ -------------------- 
+after_val_iter:
+(LOW         ) IterTimerHook                      
+ -------------------- 
+after_val_epoch:
+(VERY_LOW    ) TextLoggerHook                     
+ -------------------- 
+after_run:
+(VERY_LOW    ) TextLoggerHook                     
+ -------------------- 
+2023-02-13 22:38:02,929 - mmseg - INFO - workflow: [('train', 1)], max: 2000 iters
+2023-02-13 22:38:02,929 - mmseg - INFO - Checkpoints will be saved to /home/featurize/mmsegmentation/work_dirs/pspnet1 by HardDiskBackend.
+2023-02-13 22:38:40,230 - mmseg - INFO - Iter [50/2000]	lr: 3.914e-03, eta: 0:24:05, time: 0.741, data_time: 0.008, memory: 7603, decode.loss_ce: 0.3125, decode.acc_seg: 88.3859, aux.loss_ce: 0.2687, aux.acc_seg: 76.8768, loss: 0.5811
+2023-02-13 22:39:13,515 - mmseg - INFO - Iter [100/2000]	lr: 3.826e-03, eta: 0:22:16, time: 0.666, data_time: 0.005, memory: 7603, decode.loss_ce: 0.9503, decode.acc_seg: 70.3871, aux.loss_ce: 0.4603, aux.acc_seg: 65.4759, loss: 1.4106
+2023-02-13 22:39:46,763 - mmseg - INFO - Iter [150/2000]	lr: 3.738e-03, eta: 0:21:17, time: 0.665, data_time: 0.005, memory: 7603, decode.loss_ce: 1.1279, decode.acc_seg: 67.6218, aux.loss_ce: 0.4915, aux.acc_seg: 64.9583, loss: 1.6194
+2023-02-13 22:40:19,997 - mmseg - INFO - Iter [200/2000]	lr: 3.649e-03, eta: 0:20:31, time: 0.665, data_time: 0.005, memory: 7603, decode.loss_ce: 0.9627, decode.acc_seg: 69.9345, aux.loss_ce: 0.4317, aux.acc_seg: 68.9859, loss: 1.3944
+2023-02-13 22:43:31,486 - mmseg - INFO - per class results:
+2023-02-13 22:43:31,488 - mmseg - INFO - 
++-------------+-------+-------+
+|    Class    |  IoU  |  Acc  |
++-------------+-------+-------+
+|  background | 77.14 |  84.1 |
+|  aeroplane  | 24.35 | 80.62 |
+|   bicycle   | 21.02 | 52.97 |
+|     bird    | 17.82 | 24.48 |
+|     boat    | 23.34 | 32.68 |
+|    bottle   |  6.4  |  6.6  |
+|     bus     | 34.97 | 57.69 |
+|     car     | 32.74 | 38.95 |
+|     cat     | 35.63 | 63.91 |
+|    chair    |  1.27 |  1.4  |
+|     cow     |  3.36 |  3.38 |
+| diningtable |  1.41 |  1.44 |
+|     dog     | 27.34 | 30.85 |
+|    horse    | 18.25 | 48.72 |
+|  motorbike  | 14.52 | 89.19 |
+|    person   | 36.14 | 65.02 |
+| pottedplant |  3.4  |  3.48 |
+|    sheep    | 25.57 |  29.3 |
+|     sofa    |  5.29 |  5.58 |
+|    train    | 26.17 | 62.11 |
+|  tvmonitor  |  0.49 |  0.49 |
++-------------+-------+-------+
+2023-02-13 22:43:31,488 - mmseg - INFO - Summary:
+2023-02-13 22:43:31,488 - mmseg - INFO - 
++-------+-------+-------+
+|  aAcc |  mIoU |  mAcc |
++-------+-------+-------+
+| 72.95 | 20.79 | 37.28 |
++-------+-------+-------+
+2023-02-13 22:43:31,489 - mmseg - INFO - Iter(val) [1449]	aAcc: 0.7295, mIoU: 0.2079, mAcc: 0.3728, IoU.background: 0.7714, IoU.aeroplane: 0.2435, IoU.bicycle: 0.2102, IoU.bird: 0.1782, IoU.boat: 0.2334, IoU.bottle: 0.0640, IoU.bus: 0.3497, IoU.car: 0.3274, IoU.cat: 0.3563, IoU.chair: 0.0127, IoU.cow: 0.0336, IoU.diningtable: 0.0141, IoU.dog: 0.2734, IoU.horse: 0.1825, IoU.motorbike: 0.1452, IoU.person: 0.3614, IoU.pottedplant: 0.0340, IoU.sheep: 0.2557, IoU.sofa: 0.0529, IoU.train: 0.2617, IoU.tvmonitor: 0.0049, Acc.background: 0.8410, Acc.aeroplane: 0.8062, Acc.bicycle: 0.5297, Acc.bird: 0.2448, Acc.boat: 0.3268, Acc.bottle: 0.0660, Acc.bus: 0.5769, Acc.car: 0.3895, Acc.cat: 0.6391, Acc.chair: 0.0140, Acc.cow: 0.0338, Acc.diningtable: 0.0144, Acc.dog: 0.3085, Acc.horse: 0.4872, Acc.motorbike: 0.8919, Acc.person: 0.6502, Acc.pottedplant: 0.0348, Acc.sheep: 0.2930, Acc.sofa: 0.0558, Acc.train: 0.6211, Acc.tvmonitor: 0.0049
+2023-02-13 22:44:04,885 - mmseg - INFO - Iter [250/2000]	lr: 3.560e-03, eta: 0:42:12, time: 4.498, data_time: 3.835, memory: 7603, decode.loss_ce: 0.8386, decode.acc_seg: 71.7094, aux.loss_ce: 0.4013, aux.acc_seg: 68.3063, loss: 1.2399
+2023-02-13 22:44:38,320 - mmseg - INFO - Iter [300/2000]	lr: 3.471e-03, eta: 0:37:19, time: 0.669, data_time: 0.005, memory: 7603, decode.loss_ce: 0.8049, decode.acc_seg: 72.8647, aux.loss_ce: 0.4213, aux.acc_seg: 67.7334, loss: 1.2262
+2023-02-13 22:45:11,786 - mmseg - INFO - Iter [350/2000]	lr: 3.382e-03, eta: 0:33:40, time: 0.669, data_time: 0.005, memory: 7603, decode.loss_ce: 0.6938, decode.acc_seg: 76.6708, aux.loss_ce: 0.3656, aux.acc_seg: 70.7499, loss: 1.0594
+2023-02-13 22:45:47,423 - mmseg - INFO - Iter [400/2000]	lr: 3.292e-03, eta: 0:30:57, time: 0.713, data_time: 0.050, memory: 7603, decode.loss_ce: 0.6527, decode.acc_seg: 77.8007, aux.loss_ce: 0.3653, aux.acc_seg: 71.3616, loss: 1.0180
+2023-02-13 22:47:41,673 - mmseg - INFO - per class results:
+2023-02-13 22:47:41,674 - mmseg - INFO - 
++-------------+-------+-------+
+|    Class    |  IoU  |  Acc  |
++-------------+-------+-------+
+|  background | 81.51 | 86.41 |
+|  aeroplane  | 65.09 | 79.15 |
+|   bicycle   |  35.7 |  63.1 |
+|     bird    | 38.86 | 72.43 |
+|     boat    | 27.54 | 69.91 |
+|    bottle   | 34.36 | 48.62 |
+|     bus     | 53.92 | 58.34 |
+|     car     | 53.31 | 56.53 |
+|     cat     | 44.93 | 86.14 |
+|    chair    | 13.87 | 15.91 |
+|     cow     | 44.62 | 54.17 |
+| diningtable | 29.51 | 47.99 |
+|     dog     | 31.05 | 33.45 |
+|    horse    | 29.04 | 30.59 |
+|  motorbike  | 51.59 | 79.55 |
+|    person   | 61.38 | 86.19 |
+| pottedplant | 10.84 | 67.75 |
+|    sheep    | 19.93 | 73.63 |
+|     sofa    | 17.16 |  20.4 |
+|    train    | 56.15 | 77.76 |
+|  tvmonitor  | 33.32 | 74.77 |
++-------------+-------+-------+
+2023-02-13 22:47:41,675 - mmseg - INFO - Summary:
+2023-02-13 22:47:41,675 - mmseg - INFO - 
++-------+------+-------+
+|  aAcc | mIoU |  mAcc |
++-------+------+-------+
+| 80.25 | 39.7 | 61.09 |
++-------+------+-------+
+2023-02-13 22:47:41,675 - mmseg - INFO - Iter(val) [1449]	aAcc: 0.8025, mIoU: 0.3970, mAcc: 0.6109, IoU.background: 0.8151, IoU.aeroplane: 0.6509, IoU.bicycle: 0.3570, IoU.bird: 0.3886, IoU.boat: 0.2754, IoU.bottle: 0.3436, IoU.bus: 0.5392, IoU.car: 0.5331, IoU.cat: 0.4493, IoU.chair: 0.1387, IoU.cow: 0.4462, IoU.diningtable: 0.2951, IoU.dog: 0.3105, IoU.horse: 0.2904, IoU.motorbike: 0.5159, IoU.person: 0.6138, IoU.pottedplant: 0.1084, IoU.sheep: 0.1993, IoU.sofa: 0.1716, IoU.train: 0.5615, IoU.tvmonitor: 0.3332, Acc.background: 0.8641, Acc.aeroplane: 0.7915, Acc.bicycle: 0.6310, Acc.bird: 0.7243, Acc.boat: 0.6991, Acc.bottle: 0.4862, Acc.bus: 0.5834, Acc.car: 0.5653, Acc.cat: 0.8614, Acc.chair: 0.1591, Acc.cow: 0.5417, Acc.diningtable: 0.4799, Acc.dog: 0.3345, Acc.horse: 0.3059, Acc.motorbike: 0.7955, Acc.person: 0.8619, Acc.pottedplant: 0.6775, Acc.sheep: 0.7363, Acc.sofa: 0.2040, Acc.train: 0.7776, Acc.tvmonitor: 0.7477
+2023-02-13 22:48:15,114 - mmseg - INFO - Iter [450/2000]	lr: 3.202e-03, eta: 0:35:07, time: 2.954, data_time: 2.290, memory: 7603, decode.loss_ce: 0.6258, decode.acc_seg: 77.2397, aux.loss_ce: 0.3745, aux.acc_seg: 70.4060, loss: 1.0003
+2023-02-13 22:48:48,479 - mmseg - INFO - Saving checkpoint at 500 iterations
+2023-02-13 22:48:49,781 - mmseg - INFO - Iter [500/2000]	lr: 3.112e-03, eta: 0:32:20, time: 0.694, data_time: 0.005, memory: 7603, decode.loss_ce: 0.6384, decode.acc_seg: 76.9632, aux.loss_ce: 0.3631, aux.acc_seg: 70.5549, loss: 1.0016
+2023-02-13 22:49:23,200 - mmseg - INFO - Iter [550/2000]	lr: 3.022e-03, eta: 0:29:52, time: 0.667, data_time: 0.004, memory: 7603, decode.loss_ce: 0.5627, decode.acc_seg: 80.4587, aux.loss_ce: 0.3366, aux.acc_seg: 73.2137, loss: 0.8993
+2023-02-13 22:49:56,614 - mmseg - INFO - Iter [600/2000]	lr: 2.931e-03, eta: 0:27:44, time: 0.668, data_time: 0.005, memory: 7603, decode.loss_ce: 0.4751, decode.acc_seg: 83.8301, aux.loss_ce: 0.3047, aux.acc_seg: 75.3064, loss: 0.7798
+2023-02-13 22:51:51,236 - mmseg - INFO - per class results:
+2023-02-13 22:51:51,237 - mmseg - INFO - 
++-------------+-------+-------+
+|    Class    |  IoU  |  Acc  |
++-------------+-------+-------+
+|  background | 87.52 |  91.7 |
+|  aeroplane  | 73.73 | 84.86 |
+|   bicycle   | 41.25 | 70.99 |
+|     bird    | 37.43 | 79.34 |
+|     boat    | 42.96 | 80.61 |
+|    bottle   | 46.85 |  78.5 |
+|     bus     | 80.31 | 89.11 |
+|     car     | 74.74 | 84.22 |
+|     cat     | 63.18 | 87.09 |
+|    chair    | 15.21 | 17.12 |
+|     cow     | 55.29 | 75.04 |
+| diningtable | 29.12 | 86.27 |
+|     dog     | 43.45 | 48.96 |
+|    horse    | 62.56 | 84.22 |
+|  motorbike  | 64.54 | 79.21 |
+|    person   | 71.13 | 81.04 |
+| pottedplant | 24.09 | 33.93 |
+|    sheep    |  56.7 | 72.76 |
+|     sofa    | 25.58 | 28.93 |
+|    train    | 72.33 | 86.65 |
+|  tvmonitor  | 44.94 | 77.83 |
++-------------+-------+-------+
+2023-02-13 22:51:51,237 - mmseg - INFO - Summary:
+2023-02-13 22:51:51,238 - mmseg - INFO - 
++-------+-------+------+
+|  aAcc |  mIoU | mAcc |
++-------+-------+------+
+| 86.96 | 52.99 | 72.3 |
++-------+-------+------+
+2023-02-13 22:51:51,238 - mmseg - INFO - Iter(val) [1449]	aAcc: 0.8696, mIoU: 0.5299, mAcc: 0.7230, IoU.background: 0.8752, IoU.aeroplane: 0.7373, IoU.bicycle: 0.4125, IoU.bird: 0.3743, IoU.boat: 0.4296, IoU.bottle: 0.4685, IoU.bus: 0.8031, IoU.car: 0.7474, IoU.cat: 0.6318, IoU.chair: 0.1521, IoU.cow: 0.5529, IoU.diningtable: 0.2912, IoU.dog: 0.4345, IoU.horse: 0.6256, IoU.motorbike: 0.6454, IoU.person: 0.7113, IoU.pottedplant: 0.2409, IoU.sheep: 0.5670, IoU.sofa: 0.2558, IoU.train: 0.7233, IoU.tvmonitor: 0.4494, Acc.background: 0.9170, Acc.aeroplane: 0.8486, Acc.bicycle: 0.7099, Acc.bird: 0.7934, Acc.boat: 0.8061, Acc.bottle: 0.7850, Acc.bus: 0.8911, Acc.car: 0.8422, Acc.cat: 0.8709, Acc.chair: 0.1712, Acc.cow: 0.7504, Acc.diningtable: 0.8627, Acc.dog: 0.4896, Acc.horse: 0.8422, Acc.motorbike: 0.7921, Acc.person: 0.8104, Acc.pottedplant: 0.3393, Acc.sheep: 0.7276, Acc.sofa: 0.2893, Acc.train: 0.8665, Acc.tvmonitor: 0.7783
+2023-02-13 22:52:24,661 - mmseg - INFO - Iter [650/2000]	lr: 2.840e-03, eta: 0:29:49, time: 2.961, data_time: 2.298, memory: 7603, decode.loss_ce: 0.4609, decode.acc_seg: 82.9828, aux.loss_ce: 0.3113, aux.acc_seg: 73.6460, loss: 0.7722
+2023-02-13 22:52:58,076 - mmseg - INFO - Iter [700/2000]	lr: 2.748e-03, eta: 0:27:41, time: 0.668, data_time: 0.005, memory: 7603, decode.loss_ce: 0.4600, decode.acc_seg: 83.8300, aux.loss_ce: 0.3055, aux.acc_seg: 75.6136, loss: 0.7654
+2023-02-13 22:53:33,660 - mmseg - INFO - Iter [750/2000]	lr: 2.657e-03, eta: 0:25:50, time: 0.712, data_time: 0.051, memory: 7603, decode.loss_ce: 0.4529, decode.acc_seg: 83.8182, aux.loss_ce: 0.3027, aux.acc_seg: 74.5124, loss: 0.7555
+2023-02-13 22:54:07,006 - mmseg - INFO - Iter [800/2000]	lr: 2.564e-03, eta: 0:24:05, time: 0.667, data_time: 0.005, memory: 7603, decode.loss_ce: 0.4434, decode.acc_seg: 83.4786, aux.loss_ce: 0.3086, aux.acc_seg: 74.9057, loss: 0.7520
+2023-02-13 22:56:02,555 - mmseg - INFO - per class results:
+2023-02-13 22:56:02,556 - mmseg - INFO - 
++-------------+-------+-------+
+|    Class    |  IoU  |  Acc  |
++-------------+-------+-------+
+|  background | 87.43 | 90.47 |
+|  aeroplane  | 61.68 | 91.99 |
+|   bicycle   | 36.94 | 67.97 |
+|     bird    |  45.7 | 81.21 |
+|     boat    | 44.92 | 66.59 |
+|    bottle   | 46.46 | 79.64 |
+|     bus     | 73.11 | 79.05 |
+|     car     | 60.63 | 88.76 |
+|     cat     | 71.18 | 88.14 |
+|    chair    | 22.92 |  57.7 |
+|     cow     | 55.88 | 61.54 |
+| diningtable | 50.76 | 56.54 |
+|     dog     | 60.68 | 73.96 |
+|    horse    | 61.14 | 73.83 |
+|  motorbike  | 52.64 | 74.34 |
+|    person   | 69.76 | 87.06 |
+| pottedplant | 33.92 | 49.41 |
+|    sheep    | 67.99 | 83.36 |
+|     sofa    | 29.57 | 54.09 |
+|    train    | 60.09 | 93.82 |
+|  tvmonitor  | 48.12 | 71.79 |
++-------------+-------+-------+
+2023-02-13 22:56:02,556 - mmseg - INFO - Summary:
+2023-02-13 22:56:02,557 - mmseg - INFO - 
++-------+-------+-------+
+|  aAcc |  mIoU |  mAcc |
++-------+-------+-------+
+| 87.06 | 54.36 | 74.82 |
++-------+-------+-------+
+2023-02-13 22:56:02,557 - mmseg - INFO - Iter(val) [1449]	aAcc: 0.8706, mIoU: 0.5436, mAcc: 0.7482, IoU.background: 0.8743, IoU.aeroplane: 0.6168, IoU.bicycle: 0.3694, IoU.bird: 0.4570, IoU.boat: 0.4492, IoU.bottle: 0.4646, IoU.bus: 0.7311, IoU.car: 0.6063, IoU.cat: 0.7118, IoU.chair: 0.2292, IoU.cow: 0.5588, IoU.diningtable: 0.5076, IoU.dog: 0.6068, IoU.horse: 0.6114, IoU.motorbike: 0.5264, IoU.person: 0.6976, IoU.pottedplant: 0.3392, IoU.sheep: 0.6799, IoU.sofa: 0.2957, IoU.train: 0.6009, IoU.tvmonitor: 0.4812, Acc.background: 0.9047, Acc.aeroplane: 0.9199, Acc.bicycle: 0.6797, Acc.bird: 0.8121, Acc.boat: 0.6659, Acc.bottle: 0.7964, Acc.bus: 0.7905, Acc.car: 0.8876, Acc.cat: 0.8814, Acc.chair: 0.5770, Acc.cow: 0.6154, Acc.diningtable: 0.5654, Acc.dog: 0.7396, Acc.horse: 0.7383, Acc.motorbike: 0.7434, Acc.person: 0.8706, Acc.pottedplant: 0.4941, Acc.sheep: 0.8336, Acc.sofa: 0.5409, Acc.train: 0.9382, Acc.tvmonitor: 0.7179
+2023-02-13 22:56:35,925 - mmseg - INFO - Iter [850/2000]	lr: 2.472e-03, eta: 0:25:05, time: 2.978, data_time: 2.316, memory: 7603, decode.loss_ce: 0.4114, decode.acc_seg: 84.8429, aux.loss_ce: 0.3079, aux.acc_seg: 73.6142, loss: 0.7193
+2023-02-13 22:57:09,278 - mmseg - INFO - Iter [900/2000]	lr: 2.379e-03, eta: 0:23:20, time: 0.667, data_time: 0.005, memory: 7603, decode.loss_ce: 0.3978, decode.acc_seg: 85.7225, aux.loss_ce: 0.2811, aux.acc_seg: 76.5585, loss: 0.6788
+2023-02-13 22:57:42,650 - mmseg - INFO - Iter [950/2000]	lr: 2.286e-03, eta: 0:21:43, time: 0.667, data_time: 0.005, memory: 7603, decode.loss_ce: 0.4466, decode.acc_seg: 84.7731, aux.loss_ce: 0.3134, aux.acc_seg: 74.2367, loss: 0.7600
+2023-02-13 22:58:15,964 - mmseg - INFO - Saving checkpoint at 1000 iterations
+2023-02-13 22:58:17,238 - mmseg - INFO - Exp name: pspnet1.py
+2023-02-13 22:58:17,239 - mmseg - INFO - Iter [1000/2000]	lr: 2.192e-03, eta: 0:20:14, time: 0.693, data_time: 0.005, memory: 7603, decode.loss_ce: 0.4476, decode.acc_seg: 85.3941, aux.loss_ce: 0.3370, aux.acc_seg: 73.5727, loss: 0.7845
+2023-02-13 23:00:12,527 - mmseg - INFO - per class results:
+2023-02-13 23:00:12,528 - mmseg - INFO - 
++-------------+-------+-------+
+|    Class    |  IoU  |  Acc  |
++-------------+-------+-------+
+|  background | 88.82 | 92.92 |
+|  aeroplane  |  74.7 | 80.19 |
+|   bicycle   | 43.81 | 74.79 |
+|     bird    | 60.44 | 76.24 |
+|     boat    | 57.36 | 69.59 |
+|    bottle   |  46.8 |  72.3 |
+|     bus     | 78.29 | 85.36 |
+|     car     | 74.78 | 85.62 |
+|     cat     | 74.49 | 89.75 |
+|    chair    | 23.89 | 32.05 |
+|     cow     | 61.95 | 87.74 |
+| diningtable | 43.92 |  68.0 |
+|     dog     | 60.22 | 69.65 |
+|    horse    | 64.72 |  75.6 |
+|  motorbike  | 70.31 | 86.74 |
+|    person   | 73.28 | 83.61 |
+| pottedplant | 20.65 | 67.46 |
+|    sheep    | 59.97 | 89.21 |
+|     sofa    | 40.04 | 51.28 |
+|    train    | 68.52 | 92.78 |
+|  tvmonitor  | 53.68 | 73.01 |
++-------------+-------+-------+
+2023-02-13 23:00:12,528 - mmseg - INFO - Summary:
+2023-02-13 23:00:12,528 - mmseg - INFO - 
++-------+-------+-------+
+|  aAcc |  mIoU |  mAcc |
++-------+-------+-------+
+| 89.01 | 59.08 | 76.37 |
++-------+-------+-------+
+2023-02-13 23:00:12,529 - mmseg - INFO - Exp name: pspnet1.py
+2023-02-13 23:00:12,529 - mmseg - INFO - Iter(val) [1449]	aAcc: 0.8901, mIoU: 0.5908, mAcc: 0.7637, IoU.background: 0.8882, IoU.aeroplane: 0.7470, IoU.bicycle: 0.4381, IoU.bird: 0.6044, IoU.boat: 0.5736, IoU.bottle: 0.4680, IoU.bus: 0.7829, IoU.car: 0.7478, IoU.cat: 0.7449, IoU.chair: 0.2389, IoU.cow: 0.6195, IoU.diningtable: 0.4392, IoU.dog: 0.6022, IoU.horse: 0.6472, IoU.motorbike: 0.7031, IoU.person: 0.7328, IoU.pottedplant: 0.2065, IoU.sheep: 0.5997, IoU.sofa: 0.4004, IoU.train: 0.6852, IoU.tvmonitor: 0.5368, Acc.background: 0.9292, Acc.aeroplane: 0.8019, Acc.bicycle: 0.7479, Acc.bird: 0.7624, Acc.boat: 0.6959, Acc.bottle: 0.7230, Acc.bus: 0.8536, Acc.car: 0.8562, Acc.cat: 0.8975, Acc.chair: 0.3205, Acc.cow: 0.8774, Acc.diningtable: 0.6800, Acc.dog: 0.6965, Acc.horse: 0.7560, Acc.motorbike: 0.8674, Acc.person: 0.8361, Acc.pottedplant: 0.6746, Acc.sheep: 0.8921, Acc.sofa: 0.5128, Acc.train: 0.9278, Acc.tvmonitor: 0.7301
+2023-02-13 23:00:45,899 - mmseg - INFO - Iter [1050/2000]	lr: 2.098e-03, eta: 0:20:32, time: 2.972, data_time: 2.310, memory: 7603, decode.loss_ce: 0.3812, decode.acc_seg: 85.9969, aux.loss_ce: 0.2968, aux.acc_seg: 75.5300, loss: 0.6781
+2023-02-13 23:01:21,472 - mmseg - INFO - Iter [1100/2000]	lr: 2.003e-03, eta: 0:19:04, time: 0.711, data_time: 0.050, memory: 7603, decode.loss_ce: 0.3263, decode.acc_seg: 87.7592, aux.loss_ce: 0.2697, aux.acc_seg: 77.1736, loss: 0.5960
+2023-02-13 23:01:54,881 - mmseg - INFO - Iter [1150/2000]	lr: 1.907e-03, eta: 0:17:38, time: 0.668, data_time: 0.005, memory: 7603, decode.loss_ce: 0.3581, decode.acc_seg: 86.1286, aux.loss_ce: 0.3082, aux.acc_seg: 73.3202, loss: 0.6664
+2023-02-13 23:02:28,290 - mmseg - INFO - Iter [1200/2000]	lr: 1.812e-03, eta: 0:16:16, time: 0.668, data_time: 0.005, memory: 7603, decode.loss_ce: 0.3196, decode.acc_seg: 88.2073, aux.loss_ce: 0.2837, aux.acc_seg: 76.4029, loss: 0.6033
+2023-02-13 23:04:25,484 - mmseg - INFO - per class results:
+2023-02-13 23:04:25,486 - mmseg - INFO - 
++-------------+-------+-------+
+|    Class    |  IoU  |  Acc  |
++-------------+-------+-------+
+|  background | 90.43 |  93.5 |
+|  aeroplane  | 81.77 | 90.33 |
+|   bicycle   | 43.95 | 79.14 |
+|     bird    |  73.7 | 79.98 |
+|     boat    | 55.83 |  70.3 |
+|    bottle   | 55.25 | 78.89 |
+|     bus     | 88.46 | 94.01 |
+|     car     | 77.04 |  88.0 |
+|     cat     | 79.05 | 94.33 |
+|    chair    | 19.55 |  33.9 |
+|     cow     | 74.12 | 81.51 |
+| diningtable | 54.73 | 63.07 |
+|     dog     |  71.0 | 86.75 |
+|    horse    | 69.03 | 82.85 |
+|  motorbike  | 73.29 | 93.25 |
+|    person   | 77.39 | 86.71 |
+| pottedplant | 33.81 | 67.07 |
+|    sheep    |  51.6 | 92.68 |
+|     sofa    | 37.44 | 56.82 |
+|    train    | 77.02 | 92.56 |
+|  tvmonitor  | 48.57 |  81.8 |
++-------------+-------+-------+
+2023-02-13 23:04:25,486 - mmseg - INFO - Summary:
+2023-02-13 23:04:25,486 - mmseg - INFO - 
++-------+-------+-------+
+|  aAcc |  mIoU |  mAcc |
++-------+-------+-------+
+| 90.62 | 63.48 | 80.35 |
++-------+-------+-------+
+2023-02-13 23:04:25,487 - mmseg - INFO - Iter(val) [1449]	aAcc: 0.9062, mIoU: 0.6348, mAcc: 0.8035, IoU.background: 0.9043, IoU.aeroplane: 0.8177, IoU.bicycle: 0.4395, IoU.bird: 0.7370, IoU.boat: 0.5583, IoU.bottle: 0.5525, IoU.bus: 0.8846, IoU.car: 0.7704, IoU.cat: 0.7905, IoU.chair: 0.1955, IoU.cow: 0.7412, IoU.diningtable: 0.5473, IoU.dog: 0.7100, IoU.horse: 0.6903, IoU.motorbike: 0.7329, IoU.person: 0.7739, IoU.pottedplant: 0.3381, IoU.sheep: 0.5160, IoU.sofa: 0.3744, IoU.train: 0.7702, IoU.tvmonitor: 0.4857, Acc.background: 0.9350, Acc.aeroplane: 0.9033, Acc.bicycle: 0.7914, Acc.bird: 0.7998, Acc.boat: 0.7030, Acc.bottle: 0.7889, Acc.bus: 0.9401, Acc.car: 0.8800, Acc.cat: 0.9433, Acc.chair: 0.3390, Acc.cow: 0.8151, Acc.diningtable: 0.6307, Acc.dog: 0.8675, Acc.horse: 0.8285, Acc.motorbike: 0.9325, Acc.person: 0.8671, Acc.pottedplant: 0.6707, Acc.sheep: 0.9268, Acc.sofa: 0.5682, Acc.train: 0.9256, Acc.tvmonitor: 0.8180
+2023-02-13 23:04:58,864 - mmseg - INFO - Iter [1250/2000]	lr: 1.715e-03, eta: 0:16:09, time: 3.011, data_time: 2.349, memory: 7603, decode.loss_ce: 0.2823, decode.acc_seg: 88.7869, aux.loss_ce: 0.2675, aux.acc_seg: 77.4018, loss: 0.5498
+2023-02-13 23:05:32,246 - mmseg - INFO - Iter [1300/2000]	lr: 1.618e-03, eta: 0:14:47, time: 0.668, data_time: 0.005, memory: 7603, decode.loss_ce: 0.3338, decode.acc_seg: 87.2374, aux.loss_ce: 0.2845, aux.acc_seg: 76.5038, loss: 0.6183
+2023-02-13 23:06:05,634 - mmseg - INFO - Iter [1350/2000]	lr: 1.520e-03, eta: 0:13:30, time: 0.668, data_time: 0.005, memory: 7603, decode.loss_ce: 0.2316, decode.acc_seg: 91.2451, aux.loss_ce: 0.2293, aux.acc_seg: 81.8177, loss: 0.4609
+2023-02-13 23:06:38,983 - mmseg - INFO - Iter [1400/2000]	lr: 1.422e-03, eta: 0:12:15, time: 0.667, data_time: 0.006, memory: 7603, decode.loss_ce: 0.3157, decode.acc_seg: 89.2974, aux.loss_ce: 0.2588, aux.acc_seg: 79.5381, loss: 0.5745
+2023-02-13 23:08:34,134 - mmseg - INFO - per class results:
+2023-02-13 23:08:34,135 - mmseg - INFO - 
++-------------+-------+-------+
+|    Class    |  IoU  |  Acc  |
++-------------+-------+-------+
+|  background | 91.15 | 94.73 |
+|  aeroplane  | 80.99 | 87.77 |
+|   bicycle   | 48.93 | 75.75 |
+|     bird    | 76.59 | 80.38 |
+|     boat    | 58.81 | 75.19 |
+|    bottle   | 58.25 | 75.43 |
+|     bus     | 87.44 | 96.81 |
+|     car     | 79.53 | 86.48 |
+|     cat     | 76.08 | 82.79 |
+|    chair    | 26.64 | 41.29 |
+|     cow     | 77.94 | 85.12 |
+| diningtable |  56.6 | 66.48 |
+|     dog     | 70.84 |  85.4 |
+|    horse    | 71.14 | 91.12 |
+|  motorbike  | 77.52 | 91.63 |
+|    person   | 75.68 | 86.73 |
+| pottedplant | 31.71 |  72.4 |
+|    sheep    | 71.58 |  85.9 |
+|     sofa    | 36.59 | 58.78 |
+|    train    | 83.73 |  92.3 |
+|  tvmonitor  | 56.35 | 73.61 |
++-------------+-------+-------+
+2023-02-13 23:08:34,136 - mmseg - INFO - Summary:
+2023-02-13 23:08:34,136 - mmseg - INFO - 
++-------+-------+-------+
+|  aAcc |  mIoU |  mAcc |
++-------+-------+-------+
+| 91.38 | 66.38 | 80.29 |
++-------+-------+-------+
+2023-02-13 23:08:34,136 - mmseg - INFO - Iter(val) [1449]	aAcc: 0.9138, mIoU: 0.6638, mAcc: 0.8029, IoU.background: 0.9115, IoU.aeroplane: 0.8099, IoU.bicycle: 0.4893, IoU.bird: 0.7659, IoU.boat: 0.5881, IoU.bottle: 0.5825, IoU.bus: 0.8744, IoU.car: 0.7953, IoU.cat: 0.7608, IoU.chair: 0.2664, IoU.cow: 0.7794, IoU.diningtable: 0.5660, IoU.dog: 0.7084, IoU.horse: 0.7114, IoU.motorbike: 0.7752, IoU.person: 0.7568, IoU.pottedplant: 0.3171, IoU.sheep: 0.7158, IoU.sofa: 0.3659, IoU.train: 0.8373, IoU.tvmonitor: 0.5635, Acc.background: 0.9473, Acc.aeroplane: 0.8777, Acc.bicycle: 0.7575, Acc.bird: 0.8038, Acc.boat: 0.7519, Acc.bottle: 0.7543, Acc.bus: 0.9681, Acc.car: 0.8648, Acc.cat: 0.8279, Acc.chair: 0.4129, Acc.cow: 0.8512, Acc.diningtable: 0.6648, Acc.dog: 0.8540, Acc.horse: 0.9112, Acc.motorbike: 0.9163, Acc.person: 0.8673, Acc.pottedplant: 0.7240, Acc.sheep: 0.8590, Acc.sofa: 0.5878, Acc.train: 0.9230, Acc.tvmonitor: 0.7361
+2023-02-13 23:09:07,502 - mmseg - INFO - Iter [1450/2000]	lr: 1.322e-03, eta: 0:11:47, time: 2.970, data_time: 2.308, memory: 7603, decode.loss_ce: 0.2674, decode.acc_seg: 89.8830, aux.loss_ce: 0.2779, aux.acc_seg: 77.1292, loss: 0.5453
+2023-02-13 23:09:42,938 - mmseg - INFO - Saving checkpoint at 1500 iterations
+2023-02-13 23:09:44,196 - mmseg - INFO - Iter [1500/2000]	lr: 1.222e-03, eta: 0:10:33, time: 0.735, data_time: 0.048, memory: 7603, decode.loss_ce: 0.2271, decode.acc_seg: 91.5736, aux.loss_ce: 0.2582, aux.acc_seg: 77.5980, loss: 0.4852
+2023-02-13 23:10:17,558 - mmseg - INFO - Iter [1550/2000]	lr: 1.121e-03, eta: 0:09:21, time: 0.666, data_time: 0.004, memory: 7603, decode.loss_ce: 0.2425, decode.acc_seg: 91.4682, aux.loss_ce: 0.2724, aux.acc_seg: 77.3456, loss: 0.5149
+2023-02-13 23:10:50,903 - mmseg - INFO - Iter [1600/2000]	lr: 1.018e-03, eta: 0:08:11, time: 0.667, data_time: 0.005, memory: 7603, decode.loss_ce: 0.2730, decode.acc_seg: 89.8732, aux.loss_ce: 0.2609, aux.acc_seg: 78.9899, loss: 0.5339
+2023-02-13 23:12:45,248 - mmseg - INFO - per class results:
+2023-02-13 23:12:45,249 - mmseg - INFO - 
++-------------+-------+-------+
+|    Class    |  IoU  |  Acc  |
++-------------+-------+-------+
+|  background | 90.44 | 93.01 |
+|  aeroplane  | 80.19 | 91.31 |
+|   bicycle   | 47.67 | 84.12 |
+|     bird    | 77.96 | 85.39 |
+|     boat    | 56.53 |  78.9 |
+|    bottle   | 53.91 | 81.67 |
+|     bus     | 82.56 | 84.96 |
+|     car     | 78.68 | 89.34 |
+|     cat     | 79.93 | 88.76 |
+|    chair    | 23.71 | 49.48 |
+|     cow     | 77.01 | 92.32 |
+| diningtable | 57.15 | 66.57 |
+|     dog     | 71.95 | 88.72 |
+|    horse    | 72.39 | 88.16 |
+|  motorbike  | 74.92 | 95.69 |
+|    person   | 78.48 |  87.4 |
+| pottedplant | 32.27 | 71.57 |
+|    sheep    | 70.81 | 89.27 |
+|     sofa    | 35.69 | 62.73 |
+|    train    | 73.87 | 93.15 |
+|  tvmonitor  | 51.59 | 78.32 |
++-------------+-------+-------+
+2023-02-13 23:12:45,249 - mmseg - INFO - Summary:
+2023-02-13 23:12:45,250 - mmseg - INFO - 
++-------+-------+------+
+|  aAcc |  mIoU | mAcc |
++-------+-------+------+
+| 90.67 | 65.13 | 82.9 |
++-------+-------+------+
+2023-02-13 23:12:45,250 - mmseg - INFO - Iter(val) [1449]	aAcc: 0.9067, mIoU: 0.6513, mAcc: 0.8290, IoU.background: 0.9044, IoU.aeroplane: 0.8019, IoU.bicycle: 0.4767, IoU.bird: 0.7796, IoU.boat: 0.5653, IoU.bottle: 0.5391, IoU.bus: 0.8256, IoU.car: 0.7868, IoU.cat: 0.7993, IoU.chair: 0.2371, IoU.cow: 0.7701, IoU.diningtable: 0.5715, IoU.dog: 0.7195, IoU.horse: 0.7239, IoU.motorbike: 0.7492, IoU.person: 0.7848, IoU.pottedplant: 0.3227, IoU.sheep: 0.7081, IoU.sofa: 0.3569, IoU.train: 0.7387, IoU.tvmonitor: 0.5159, Acc.background: 0.9301, Acc.aeroplane: 0.9131, Acc.bicycle: 0.8412, Acc.bird: 0.8539, Acc.boat: 0.7890, Acc.bottle: 0.8167, Acc.bus: 0.8496, Acc.car: 0.8934, Acc.cat: 0.8876, Acc.chair: 0.4948, Acc.cow: 0.9232, Acc.diningtable: 0.6657, Acc.dog: 0.8872, Acc.horse: 0.8816, Acc.motorbike: 0.9569, Acc.person: 0.8740, Acc.pottedplant: 0.7157, Acc.sheep: 0.8927, Acc.sofa: 0.6273, Acc.train: 0.9315, Acc.tvmonitor: 0.7832
+2023-02-13 23:13:18,631 - mmseg - INFO - Iter [1650/2000]	lr: 9.145e-04, eta: 0:07:28, time: 2.955, data_time: 2.292, memory: 7603, decode.loss_ce: 0.2238, decode.acc_seg: 91.8079, aux.loss_ce: 0.2299, aux.acc_seg: 80.1826, loss: 0.4538
+2023-02-13 23:13:51,988 - mmseg - INFO - Iter [1700/2000]	lr: 8.093e-04, eta: 0:06:19, time: 0.667, data_time: 0.005, memory: 7603, decode.loss_ce: 0.2106, decode.acc_seg: 92.4480, aux.loss_ce: 0.2256, aux.acc_seg: 81.3635, loss: 0.4362
+2023-02-13 23:14:25,357 - mmseg - INFO - Iter [1750/2000]	lr: 7.023e-04, eta: 0:05:11, time: 0.667, data_time: 0.005, memory: 7603, decode.loss_ce: 0.2354, decode.acc_seg: 91.0090, aux.loss_ce: 0.2685, aux.acc_seg: 77.3549, loss: 0.5040
+2023-02-13 23:14:58,719 - mmseg - INFO - Iter [1800/2000]	lr: 5.932e-04, eta: 0:04:06, time: 0.667, data_time: 0.005, memory: 7603, decode.loss_ce: 0.2187, decode.acc_seg: 92.0676, aux.loss_ce: 0.2410, aux.acc_seg: 80.1908, loss: 0.4597
+2023-02-13 23:16:55,317 - mmseg - INFO - per class results:
+2023-02-13 23:16:55,319 - mmseg - INFO - 
++-------------+-------+-------+
+|    Class    |  IoU  |  Acc  |
++-------------+-------+-------+
+|  background | 91.52 | 94.41 |
+|  aeroplane  | 83.79 | 92.81 |
+|   bicycle   |  50.8 | 79.75 |
+|     bird    | 79.74 | 85.09 |
+|     boat    | 60.73 | 79.62 |
+|    bottle   | 58.11 | 80.58 |
+|     bus     | 86.85 | 98.14 |
+|     car     | 80.02 | 88.66 |
+|     cat     | 84.84 | 93.99 |
+|    chair    | 28.77 | 47.85 |
+|     cow     | 81.06 | 89.03 |
+| diningtable | 54.98 | 71.26 |
+|     dog     | 76.58 | 88.85 |
+|    horse    | 74.65 | 90.17 |
+|  motorbike  | 77.62 | 94.13 |
+|    person   |  79.3 | 86.05 |
+| pottedplant | 33.59 |  73.7 |
+|    sheep    | 74.69 | 88.86 |
+|     sofa    | 40.93 | 64.63 |
+|    train    | 81.95 | 89.77 |
+|  tvmonitor  | 55.92 | 78.63 |
++-------------+-------+-------+
+2023-02-13 23:16:55,319 - mmseg - INFO - Summary:
+2023-02-13 23:16:55,320 - mmseg - INFO - 
++-------+------+-------+
+|  aAcc | mIoU |  mAcc |
++-------+------+-------+
+| 91.95 | 68.4 | 83.62 |
++-------+------+-------+
+2023-02-13 23:16:55,320 - mmseg - INFO - Iter(val) [1449]	aAcc: 0.9195, mIoU: 0.6840, mAcc: 0.8362, IoU.background: 0.9152, IoU.aeroplane: 0.8379, IoU.bicycle: 0.5080, IoU.bird: 0.7974, IoU.boat: 0.6073, IoU.bottle: 0.5811, IoU.bus: 0.8685, IoU.car: 0.8002, IoU.cat: 0.8484, IoU.chair: 0.2877, IoU.cow: 0.8106, IoU.diningtable: 0.5498, IoU.dog: 0.7658, IoU.horse: 0.7465, IoU.motorbike: 0.7762, IoU.person: 0.7930, IoU.pottedplant: 0.3359, IoU.sheep: 0.7469, IoU.sofa: 0.4093, IoU.train: 0.8195, IoU.tvmonitor: 0.5592, Acc.background: 0.9441, Acc.aeroplane: 0.9281, Acc.bicycle: 0.7975, Acc.bird: 0.8509, Acc.boat: 0.7962, Acc.bottle: 0.8058, Acc.bus: 0.9814, Acc.car: 0.8866, Acc.cat: 0.9399, Acc.chair: 0.4785, Acc.cow: 0.8903, Acc.diningtable: 0.7126, Acc.dog: 0.8885, Acc.horse: 0.9017, Acc.motorbike: 0.9413, Acc.person: 0.8605, Acc.pottedplant: 0.7370, Acc.sheep: 0.8886, Acc.sofa: 0.6463, Acc.train: 0.8977, Acc.tvmonitor: 0.7863
+2023-02-13 23:17:30,899 - mmseg - INFO - Iter [1850/2000]	lr: 4.813e-04, eta: 0:03:11, time: 3.044, data_time: 2.382, memory: 7603, decode.loss_ce: 0.2195, decode.acc_seg: 91.9359, aux.loss_ce: 0.2513, aux.acc_seg: 79.0801, loss: 0.4708
+2023-02-13 23:18:04,302 - mmseg - INFO - Iter [1900/2000]	lr: 3.655e-04, eta: 0:02:06, time: 0.668, data_time: 0.006, memory: 7603, decode.loss_ce: 0.2266, decode.acc_seg: 92.0106, aux.loss_ce: 0.2433, aux.acc_seg: 80.4448, loss: 0.4699
+2023-02-13 23:18:37,696 - mmseg - INFO - Iter [1950/2000]	lr: 2.435e-04, eta: 0:01:02, time: 0.668, data_time: 0.005, memory: 7603, decode.loss_ce: 0.2494, decode.acc_seg: 91.0088, aux.loss_ce: 0.2776, aux.acc_seg: 76.7388, loss: 0.5269
+2023-02-13 23:19:11,089 - mmseg - INFO - Saving checkpoint at 2000 iterations
+2023-02-13 23:19:12,213 - mmseg - INFO - Exp name: pspnet1.py
+2023-02-13 23:19:12,213 - mmseg - INFO - Iter [2000/2000]	lr: 1.042e-04, eta: 0:00:00, time: 0.691, data_time: 0.005, memory: 7603, decode.loss_ce: 0.1844, decode.acc_seg: 94.0284, aux.loss_ce: 0.2191, aux.acc_seg: 81.8338, loss: 0.4036
+2023-02-13 23:21:07,501 - mmseg - INFO - per class results:
+2023-02-13 23:21:07,502 - mmseg - INFO - 
++-------------+-------+-------+
+|    Class    |  IoU  |  Acc  |
++-------------+-------+-------+
+|  background | 90.04 | 92.07 |
+|  aeroplane  | 81.33 | 94.22 |
+|   bicycle   |  49.6 | 77.84 |
+|     bird    | 79.44 | 89.89 |
+|     boat    | 51.66 | 86.34 |
+|    bottle   | 50.29 | 81.82 |
+|     bus     | 87.16 | 97.61 |
+|     car     | 77.99 | 92.03 |
+|     cat     | 85.24 | 93.94 |
+|    chair    | 28.99 | 52.68 |
+|     cow     | 79.25 | 94.53 |
+| diningtable |  55.7 | 72.13 |
+|     dog     | 77.32 | 91.09 |
+|    horse    | 75.62 | 90.71 |
+|  motorbike  | 68.91 | 93.89 |
+|    person   | 79.03 | 88.15 |
+| pottedplant |  34.7 | 72.06 |
+|    sheep    |  64.6 | 90.63 |
+|     sofa    | 41.02 | 70.44 |
+|    train    | 76.46 | 94.74 |
+|  tvmonitor  | 51.81 | 80.04 |
++-------------+-------+-------+
+2023-02-13 23:21:07,502 - mmseg - INFO - Summary:
+2023-02-13 23:21:07,502 - mmseg - INFO - 
++-------+-------+-------+
+|  aAcc |  mIoU |  mAcc |
++-------+-------+-------+
+| 90.82 | 66.01 | 85.57 |
++-------+-------+-------+
+2023-02-13 23:21:07,503 - mmseg - INFO - Exp name: pspnet1.py
+2023-02-13 23:21:07,503 - mmseg - INFO - Iter(val) [1449]	aAcc: 0.9082, mIoU: 0.6601, mAcc: 0.8557, IoU.background: 0.9004, IoU.aeroplane: 0.8133, IoU.bicycle: 0.4960, IoU.bird: 0.7944, IoU.boat: 0.5166, IoU.bottle: 0.5029, IoU.bus: 0.8716, IoU.car: 0.7799, IoU.cat: 0.8524, IoU.chair: 0.2899, IoU.cow: 0.7925, IoU.diningtable: 0.5570, IoU.dog: 0.7732, IoU.horse: 0.7562, IoU.motorbike: 0.6891, IoU.person: 0.7903, IoU.pottedplant: 0.3470, IoU.sheep: 0.6460, IoU.sofa: 0.4102, IoU.train: 0.7646, IoU.tvmonitor: 0.5181, Acc.background: 0.9207, Acc.aeroplane: 0.9422, Acc.bicycle: 0.7784, Acc.bird: 0.8989, Acc.boat: 0.8634, Acc.bottle: 0.8182, Acc.bus: 0.9761, Acc.car: 0.9203, Acc.cat: 0.9394, Acc.chair: 0.5268, Acc.cow: 0.9453, Acc.diningtable: 0.7213, Acc.dog: 0.9109, Acc.horse: 0.9071, Acc.motorbike: 0.9389, Acc.person: 0.8815, Acc.pottedplant: 0.7206, Acc.sheep: 0.9063, Acc.sofa: 0.7044, Acc.train: 0.9474, Acc.tvmonitor: 0.8004
